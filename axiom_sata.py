@@ -1,9 +1,29 @@
 #!/usr/bin/env python3
 
+# Copyright (c) 2020 Florent Kermarrec <florent@enjoy-digital.fr>
+# SPDX-License-Identifier: BSD-2-Clause
 
-from litex.build.generic_platform import *
-from litex.build.xilinx import XilinxPlatform, VivadoProgrammer
+import sys
+import argparse
+
+from migen import *
+
 from litex.build.openocd import OpenOCD
+from litex.build.generic_platform import *
+from litex.build.xilinx import XilinxPlatform
+from litex.build.generic_platform import *
+
+from litex.soc.cores.clock import S7PLL
+from litex.soc.integration.soc_core import *
+from litex.soc.integration.builder import *
+
+from litesata.common import *
+from litesata.phy import LiteSATAPHY
+from litesata.core import LiteSATACore
+from litesata.frontend.arbitration import LiteSATACrossbar
+from litesata.frontend.bist import LiteSATABIST
+
+from litescope import LiteScopeAnalyzer
 
 # IOs ----------------------------------------------------------------------------------------------
 
@@ -22,38 +42,11 @@ _io = [
     ("module_led", 0, Pins("K18"), IOStandard("LVCMOS33")),
     ("user_led_n", 0, Pins("V12"), IOStandard("LVCMOS33")),
     ("user_led_n", 1, Pins("U11"), IOStandard("LVCMOS33")),
-    ("user_led_n", 2, Pins("U9"), IOStandard("LVCMOS33")),
+    ("user_led_n", 2, Pins("U9"),  IOStandard("LVCMOS33")),
     ("user_led_n", 3, Pins("V11"), IOStandard("LVCMOS33")),
 
     # SATA
     ("sata", 0,
-        Subsignal("clk_p", Pins("D6")),
-        Subsignal("clk_n", Pins("D5")),
-        Subsignal("tx_p",  Pins("H2")),
-        Subsignal("tx_n",  Pins("H1")),
-        Subsignal("rx_p",  Pins("E4")),
-        Subsignal("rx_n",  Pins("E3")),
-    ),
-
-    ("sata", 1,
-        Subsignal("clk_p", Pins("D6")),
-        Subsignal("clk_n", Pins("D5")),
-        Subsignal("tx_p",  Pins("F2")),
-        Subsignal("tx_n",  Pins("F1")),
-        Subsignal("rx_p",  Pins("A4")),
-        Subsignal("rx_n",  Pins("A3")),
-    ),
-
-    ("sata", 2,
-        Subsignal("clk_p", Pins("D6")),
-        Subsignal("clk_n", Pins("D5")),
-        Subsignal("tx_p",  Pins("D2")),
-        Subsignal("tx_n",  Pins("D1")),
-        Subsignal("rx_p",  Pins("C4")),
-        Subsignal("rx_n",  Pins("C3")),
-    ),
-
-    ("sata", 3,
         Subsignal("clk_p", Pins("D6")),
         Subsignal("clk_n", Pins("D5")),
         Subsignal("tx_p",  Pins("B2")),
@@ -61,11 +54,31 @@ _io = [
         Subsignal("rx_p",  Pins("G4")),
         Subsignal("rx_n",  Pins("G3")),
     ),
+    ("sata", 1,
+        Subsignal("clk_p", Pins("D6")),
+        Subsignal("clk_n", Pins("D5")),
+        Subsignal("tx_p",  Pins("D2")),
+        Subsignal("tx_n",  Pins("D1")),
+        Subsignal("rx_p",  Pins("C4")),
+        Subsignal("rx_n",  Pins("C3")),
+    ),
+    ("sata", 2,
+        Subsignal("clk_p", Pins("D6")),
+        Subsignal("clk_n", Pins("D5")),
+        Subsignal("tx_p",  Pins("F2")),
+        Subsignal("tx_n",  Pins("F1")),
+        Subsignal("rx_p",  Pins("A4")),
+        Subsignal("rx_n",  Pins("A3")),
+    ),
+    ("sata", 3,
+        Subsignal("clk_p", Pins("D6")),
+        Subsignal("clk_n", Pins("D5")),
+        Subsignal("tx_p",  Pins("H2")),
+        Subsignal("tx_n",  Pins("H1")),
+        Subsignal("rx_p",  Pins("E4")),
+        Subsignal("rx_n",  Pins("E3")),
+    ),
 ]
-
-# Connectors ---------------------------------------------------------------------------------------
-
-_connectors = []
 
 # Platform -----------------------------------------------------------------------------------------
 
@@ -74,7 +87,7 @@ class Platform(XilinxPlatform):
     default_clk_period = 1e9/25e6
 
     def __init__(self):
-        XilinxPlatform.__init__(self, "xc7a50t-csg325-2", _io, _connectors, toolchain="vivado")
+        XilinxPlatform.__init__(self, "xc7a50t-csg325-2", _io, toolchain="vivado")
 
     def create_programmer(self):
         return OpenOCD("openocd_xc7_ft232.cfg", "bscan_spi_xc7a200t.bit")
@@ -82,31 +95,6 @@ class Platform(XilinxPlatform):
     def do_finalize(self, fragment):
         XilinxPlatform.do_finalize(self, fragment)
         self.add_period_constraint(self.lookup_request("clk25", loose=True), 1e9/25e6)
-
-#
-# This file is part of LiteSATA.
-#
-# Copyright (c) 2015-2020 Florent Kermarrec <florent@enjoy-digital.fr>
-# SPDX-License-Identifier: BSD-2-Clause
-
-import sys
-import argparse
-
-from migen import *
-
-from litex.build.generic_platform import *
-
-from litex.soc.cores.clock import S7PLL
-from litex.soc.integration.soc_core import *
-from litex.soc.integration.builder import *
-
-from litesata.common import *
-from litesata.phy import LiteSATAPHY
-from litesata.core import LiteSATACore
-from litesata.frontend.arbitration import LiteSATACrossbar
-from litesata.frontend.bist import LiteSATABIST
-
-from litescope import LiteScopeAnalyzer
 
 # CRG ----------------------------------------------------------------------------------------------
 
@@ -123,7 +111,7 @@ class _CRG(Module):
 # SATATestSoC --------------------------------------------------------------------------------------
 
 class SATATestSoC(SoCMini):
-    def __init__(self, platform, gen="gen2", with_analyzer=False):
+    def __init__(self, platform, port=0, gen="gen2", with_analyzer=False):
         assert gen in ["gen1", "gen2", "gen3"]
         sys_clk_freq  = int(100e6)
         sata_clk_freq = {"gen1": 75e6, "gen2": 150e6, "gen3": 300e6}[gen]
@@ -141,7 +129,7 @@ class SATATestSoC(SoCMini):
         # SATA -------------------------------------------------------------------------------------
         # PHY
         self.submodules.sata_phy = LiteSATAPHY(platform.device,
-            pads       = platform.request("sata", 0),
+            pads       = platform.request("sata", port),
             gen        = gen,
             clk_freq   = sys_clk_freq,
             data_width = 16)
@@ -212,12 +200,13 @@ def main():
     parser = argparse.ArgumentParser(description="LiteSATA bench on Axiom Beta SATA")
     parser.add_argument("--build",         action="store_true", help="Build bitstream")
     parser.add_argument("--load",          action="store_true", help="Load bitstream (to SRAM)")
+    parser.add_argument("--port",          default="0",         help="SATA Port: 0 (default), 1, 2 or 3")
     parser.add_argument("--gen",           default="2",         help="SATA Gen: 1, 2 (default) or 3")
     parser.add_argument("--with-analyzer", action="store_true", help="Add LiteScope Analyzer")
     args = parser.parse_args()
 
     platform = Platform()
-    soc = SATATestSoC(platform, "gen" + args.gen, with_analyzer=args.with_analyzer)
+    soc = SATATestSoC(platform, port=int(args.port, 0), gen="gen" + args.gen, with_analyzer=args.with_analyzer)
     builder = Builder(soc, csr_csv="csr.csv")
     builder.build(run=args.build)
 
