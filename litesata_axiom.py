@@ -205,10 +205,12 @@ def main():
     parser.add_argument("--with-analyzer", action="store_true", help="Add LiteScope Analyzer")
     args = parser.parse_args()
 
+    build_name = f"litesata_axiom_p{args.port}"
+
     platform = Platform()
     soc = SATATestSoC(platform, port=int(args.port, 0), gen="gen" + args.gen, with_analyzer=args.with_analyzer)
-    builder = Builder(soc, csr_csv="csr.csv")
-    builder.build(run=args.build)
+    builder = Builder(soc, csr_csv="csr.csv", output_dir=f"build/{build_name}")
+    builder.build(build_name=build_name, run=args.build)
 
     if args.load:
         prog = soc.platform.create_programmer()
