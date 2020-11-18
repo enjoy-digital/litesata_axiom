@@ -11,7 +11,6 @@ from migen import *
 from litex.build.openocd import OpenOCD
 from litex.build.generic_platform import *
 from litex.build.xilinx import XilinxPlatform
-from litex.build.generic_platform import *
 
 from litex.soc.cores.clock import S7PLL
 from litex.soc.integration.soc_core import *
