@@ -26,7 +26,6 @@ The module is connected to the Axiom Beta through the two plugin connectors (rep
 ----------------
 - Python3, Vivado WebPACK and OpenOCD.
 - An OpenOCD compatible JTAG cable.
-- A USB/UART cable.
 
 [> Installing LiteX
 -------------------
@@ -45,7 +44,7 @@ $ ./litesata_axiom.py --port=0 --gen=2 --build --load
 [> Open LiteX server
 --------------------
 ```sh
-$ lxserver --uart --uart-port=/dev/ttyUSBX
+$ lxserver --jtag
 ```
 
 [> Enjoy :)

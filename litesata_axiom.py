@@ -105,7 +105,7 @@ class _CRG(Module):
 
         self.submodules.pll = pll = S7PLL(speedgrade=-1)
         pll.register_clkin(platform.request("clk25"), 25e6)
-        pll.create_clkout(self.cd_sys,       sys_clk_freq)
+        pll.create_clkout(self.cd_sys, sys_clk_freq)
 
 # SATATestSoC --------------------------------------------------------------------------------------
 
@@ -121,9 +121,10 @@ class SATATestSoC(SoCMini):
         # SoCMini ----------------------------------------------------------------------------------
         SoCMini.__init__(self, platform, sys_clk_freq,
             ident         = "LiteSATA bench on Axiom Beta SATA",
-            ident_version = True,
-            with_uart     = True,
-            uart_name     = "bridge")
+            ident_version = True)
+
+        # JTAGBone ---------------------------------------------------------------------------------
+        self.add_jtagbone()
 
         # SATA -------------------------------------------------------------------------------------
         # PHY
